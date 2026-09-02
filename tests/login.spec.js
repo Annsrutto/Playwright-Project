@@ -1,41 +1,44 @@
 import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage';
 
-test('should login successfully with valid credentials', async ({ page }) => {
+test.describe('OrangeHRM login', () => {
+  test.beforeEach(async ({ page }) => {
+    const loginPage = new LoginPage(page);
 
-  await page.goto('https://opensource-demo.orangehrmlive.com/');
+    // Navigate to the login page before each independent test.
+    await loginPage.navigateToLoginPage();
+  });
 
-  // fill in the username field
-  await page.getByPlaceholder('Username').fill('Admin');
+  test('should login successfully with valid credentials', async ({ page }) => {
+    const loginPage = new LoginPage(page);
 
-  // fill in the password field
-  await page.getByPlaceholder('Password').fill('admin123');
+    // Enter valid credentials and submit the login form.
+    await loginPage.login('Admin', 'admin123');
 
-  // click the login button
-  await page.getByRole('button', { name: 'Login' }).click();
+    // Verify the user is redirected to the dashboard.
+    await expect(page).toHaveURL(/dashboard/);
 
-  // verify dashboard is displayed after login
-  await expect(page).toHaveURL(/dashboard/);
+    // Verify the dashboard heading is visible after login.
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+  });
 
-  // verify dashboard heading is visible
-  await expect(page.getByRole('heading', { name: 'Dashboard' }))
-    .toBeVisible();
-});
+  test('should show an error for invalid login credentials', async ({ page }) => {
+    const loginPage = new LoginPage(page);
 
+    // Enter an invalid password and submit the login form.
+    await loginPage.login('Admin', 'admin123456');
 
-test('Invalid login credentials', async ({ page }) => {
+    // Verify the invalid credentials message is displayed.
+    await expect(loginPage.getInvalidCredentialsMessage()).toBeVisible();
+  });
 
-  await page.goto('https://opensource-demo.orangehrmlive.com/');
+  test('should show required errors when credentials are empty', async ({ page }) => {
+    const loginPage = new LoginPage(page);
 
-  // fill in the username field
-  await page.getByPlaceholder('Username').fill('Admin');
+    // Submit the empty login form.
+    await loginPage.login('', '');
 
-  // fill in the password field with an invalid password
-  await page.getByPlaceholder('Password').fill('admin123456');
-
-  // click the login button
-  await page.getByRole('button', { name: 'Login' }).click();
-
-  // verify invalid credentials message appears
-  await expect(page.getByText('Invalid credentials'))
-    .toBeVisible();
+    // Verify both required field messages are displayed.
+    await expect(loginPage.getRequiredFieldErrors()).toHaveCount(2);
+  });
 });
