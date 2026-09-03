@@ -1,4 +1,5 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
+import { createUniqueTestData } from './support/test-data';
 
 const BASE_URL = 'https://reqres.in/api';
 const USER_ID = 2;
@@ -23,7 +24,13 @@ test.describe('ReqRes users CRUD API', () => {
 
   // POST: create a user and verify the returned representation.
   test('POST creates a user', async ({ request }) => {
-    const newUser = { name: 'ARutto', job: 'QA Engineer' };
+    const { username, email, resourceName } = createUniqueTestData();
+    const newUser = {
+      name: resourceName,
+      job: 'QA Engineer',
+      username,
+      email,
+    };
     const response = await request.post(`${BASE_URL}/users`, { data: newUser });
     expect(response.status()).toBe(201);
 
